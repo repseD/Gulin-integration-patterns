@@ -1,0 +1,52 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-task2
+    ports:
+      - "5673:5672"   # AMQP
+      - "15673:15672" # management UI (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  #издатель
+  publisher:
+    build: .
+    container_name: task2-publisher
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      accounting:
+        condition: service_started
+      depot:
+        condition: service_started
+      analytics:
+        condition: service_started
+    command: ["python", "publisher.py"]
+
+  #подписчики
+  accounting:
+    build: .
+    container_name: task2-accounting
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "department.py", "Бухгалтерия"]
+
+  depot:
+    build: .
+    container_name: task2-depot
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "department.py", "Нефтебаза"]
+
+  analytics:
+    build: .
+    container_name: task2-analytics
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "department.py", "Аналитика"]
