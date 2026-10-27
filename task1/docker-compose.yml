@@ -1,0 +1,46 @@
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq-task1
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # management UI (guest/guest)
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "check_running"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # диспетчерская служба
+  dispatcher:
+    build: .
+    container_name: task1-dispatcher
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "dispatcher.py"]
+
+  # бригады:
+  crew-1:
+    build: .
+    container_name: task1-crew-1
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "crew.py", "Бригада-1"]
+
+  crew-2:
+    build: .
+    container_name: task1-crew-2
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "crew.py", "Бригада-2"]
+
+  crew-3:
+    build: .
+    container_name: task1-crew-3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    command: ["python", "crew.py", "Бригада-3"]
